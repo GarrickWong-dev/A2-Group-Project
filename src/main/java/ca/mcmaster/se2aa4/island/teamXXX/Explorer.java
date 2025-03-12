@@ -1,20 +1,24 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 import java.io.StringReader;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import eu.ace_design.island.bot.IExplorerRaid;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+
+import eu.ace_design.island.bot.IExplorerRaid;
 
 public class Explorer implements IExplorerRaid {
 
     private final Logger logger = LogManager.getLogger();
     private int move = 0; //Decides what action to do
     private Integer totalCost = 0; //Nothing right now
-    private CoordinateManager coords = CoordinateManager.getInstance(); // Coordinage Manager
-    private Actions actions = Actions.getInstance(coords); //Actions class
+
+    private final CoordinateManager cm = CoordinateManager.getInstance();
+    private final DirectionToString dts = DirectionToString.getInstance();
+    private final Drone drone = Drone.getInstance();
+    private final Actions actions = Actions.getInstance(cm, drone, dts);
 
     @Override
     public void initialize(String s) {
@@ -29,85 +33,49 @@ public class Explorer implements IExplorerRaid {
 
     @Override
     public String takeDecision() {
-        move ++;
         JSONObject decision = new JSONObject();
-        if (move % 2 == 0){
-            decision.put("action", "scan");
-        }
-        if (move == 1){
-        actions.forward(decision); //Move Forward in East Direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 3){
-        actions.forward(decision); //Move forward in east direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }   
-        if (move == 5){
-        actions.forward(decision); //Move forward in east direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 7){
-        actions.south(decision); //south turn
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 9){
-        actions.forward(decision); //Forward in south direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 11){
-        actions.forward(decision); //Forward in south direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 13){
-        actions.west(decision); //west turn
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 15){
-        actions.forward(decision); //Move forward in west direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        }
-        if (move == 17){
-        actions.north(decision); //North turn
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        
-        }
-        if (move == 19){
-        actions.forward(decision); //Move forward in North direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        
-        }
-        if (move == 21){
-        actions.east(decision); //east turn
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        
-        }
-        if (move == 23){
-        actions.forward(decision); //Move forward in east direction
-        logger.info(coords.getX());
-        logger.info(coords.getY());
-        
-        }   
+        Coordinates coords = drone.getCoordinates();
 
-
-        if (move == 25){
-        decision.put("action", "stop");
-        } // we stop the exploration immediately
-        //logger.info("** Decision: {}",decision.toString());
+        switch(move){
+            case 0 -> {
+                actions.moveForward(decision);
+                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
+            }
+            case 1 -> {
+                decision.put("action", "scan");
+            }
+            case 2 -> {
+                actions.turnLeft(decision);
+                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
+            }
+            case 3 -> {
+                decision.put("action", "scan");
+            }
+            case 4 -> {
+                actions.turnRight(decision);
+                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
+            }
+            case 5 -> {
+                decision.put("action", "scan");
+            }
+            case 6 -> {
+                actions.moveForward(decision);
+                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
+            }
+            case 7 -> {
+                actions.moveForward(decision);
+                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
+            }
+            case 8 -> {
+                decision.put("action", "scan");
+            }
+            case 9 -> {
+                decision.put("action", "stop");
+            }
+        }
+        move++;
         return decision.toString();
     }
-
-
 
     @Override
     public void acknowledgeResults(String s) {
@@ -127,8 +95,4 @@ public class Explorer implements IExplorerRaid {
     public String deliverFinalReport() {
         return "no creek found";
     }
-
-
-
-
 }
