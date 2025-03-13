@@ -1,5 +1,7 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+import org.json.JSONObject;
+
 public interface Search {
-    public void search();
+    public JSONObject search();
 }

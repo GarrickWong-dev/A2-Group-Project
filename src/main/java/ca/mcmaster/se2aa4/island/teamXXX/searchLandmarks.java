@@ -16,6 +16,7 @@ public class searchLandmarks implements Search {
     }
 
     @Override
-    public void search(){
+    public JSONObject search(){
+        return null;
     }
 }
