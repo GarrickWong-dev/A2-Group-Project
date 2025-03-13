@@ -1,5 +1,7 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 public class Actions {
@@ -8,6 +10,7 @@ public class Actions {
     private final Direction[] directions;
     private final DirectionToString converter;
     private final Drone drone;
+    private final Logger logger = LogManager.getLogger();
 
     private Actions(CoordinateManager cm, Drone drone, DirectionToString converter){
         this.directions = Direction.values();
@@ -27,6 +30,8 @@ public class Actions {
         Direction heading = directions[(directionIndex() - 1 + directions.length) % directions.length];
         decision.put("action", "heading");
         decision.put("parameters", new JSONObject().put("direction", converter.toString(heading)));
+        logger.info("Turning left");
+        logger.info(decision);
         cm.updateCoords(decision);
         drone.setFacing(heading);
     }
@@ -35,12 +40,14 @@ public class Actions {
         Direction heading = directions[(directionIndex() + 1) % directions.length];
         decision.put("action", "heading");
         decision.put("parameters", new JSONObject().put("direction", converter.toString(heading)));
+        logger.info("Turning right");
         cm.updateCoords(decision);
         drone.setFacing(heading);
     }
 
     public void moveForward(JSONObject decision){
         decision.put("action", "fly");
+        logger.info("Going straight");
         cm.updateCoords(decision);
     }
 
