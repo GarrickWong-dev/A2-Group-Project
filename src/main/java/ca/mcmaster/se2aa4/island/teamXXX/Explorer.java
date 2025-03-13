@@ -35,45 +35,8 @@ public class Explorer implements IExplorerRaid {
     public String takeDecision() {
         JSONObject decision = new JSONObject();
         Coordinates coords = drone.getCoordinates();
-
-        switch(move){
-            case 0 -> {
-                actions.moveForward(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 1 -> {
-                decision.put("action", "scan");
-            }
-            case 2 -> {
-                actions.turnLeft(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 3 -> {
-                decision.put("action", "scan");
-            }
-            case 4 -> {
-                actions.turnRight(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 5 -> {
-                decision.put("action", "scan");
-            }
-            case 6 -> {
-                actions.moveForward(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 7 -> {
-                actions.moveForward(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 8 -> {
-                decision.put("action", "scan");
-            }
-            case 9 -> {
-                decision.put("action", "stop");
-            }
-        }
-        move++;
+        SearchLandmarks sl = SearchLandmarks.getInstance(this.actions, decision);
+        decision = sl.search();
         return decision.toString();
     }
 
