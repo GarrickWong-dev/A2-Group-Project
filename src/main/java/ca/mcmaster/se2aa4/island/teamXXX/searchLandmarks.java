@@ -56,7 +56,8 @@ public class SearchLandmarks implements Search {
                     movesInCurrentStep = 0;
                 }
             }
-            scanFlag = true;
+            scanFlag = true; // Set scan flag after performing an action
+        }
         return decision;
     }
 }
