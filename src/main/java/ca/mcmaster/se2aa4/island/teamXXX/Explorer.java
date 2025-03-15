@@ -19,76 +19,43 @@ public class Explorer implements IExplorerRaid {
     private final DirectionToString dts = DirectionToString.getInstance();
     private final Drone drone = Drone.getInstance();
     private final Actions actions = Actions.getInstance(cm, drone, dts);
+    private String currentHeading;
+    private FindIsland findIsland;
 
     @Override
     public void initialize(String s) {
         logger.info("** Initializing the Exploration Command Center");
         JSONObject info = new JSONObject(new JSONTokener(new StringReader(s)));
         logger.info("** Initialization info:\n {}",info.toString(2));
+        currentHeading = info.getString("heading");
         String direction = info.getString("heading");
         Integer batteryLevel = info.getInt("budget");
         logger.info("The drone is facing {}", direction);
         logger.info("Battery level is {}", batteryLevel);
+        findIsland = new FindIsland(currentHeading);
     }
 
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
         Coordinates coords = drone.getCoordinates();
-
-        switch(move){
-            case 0 -> {
-                actions.moveForward(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 1 -> {
-                decision.put("action", "scan");
-            }
-            case 2 -> {
-                actions.turnLeft(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 3 -> {
-                decision.put("action", "scan");
-            }
-            case 4 -> {
-                actions.turnRight(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 5 -> {
-                decision.put("action", "scan");
-            }
-            case 6 -> {
-                actions.moveForward(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 7 -> {
-                actions.moveForward(decision);
-                logger.info("X: " + coords.getX() + " Y: " + coords.getY());
-            }
-            case 8 -> {
-                decision.put("action", "scan");
-            }
-            case 9 -> {
-                decision.put("action", "stop");
-            }
-        }
-        move++;
+        decision = findIsland.search();
         return decision.toString();
     }
 
     @Override
     public void acknowledgeResults(String s) {
         JSONObject response = new JSONObject(new JSONTokener(new StringReader(s)));
-        //logger.info("** Response received:\n"+response.toString(2));
+        logger.info("** Response received:\n"+response.toString(2));
         Integer cost = response.getInt("cost");
-        //logger.info("The cost of the action was {}", cost);
+        logger.info("The cost of the action was {}", cost);
         totalCost += cost;
-        //logger.info("Total cost is {}", totalCost);
+        logger.info("Total cost is {}", totalCost);
         String status = response.getString("status");
-        //logger.info("The status of the drone is {}", status);
+        logger.info("The status of the drone is {}", status);
         JSONObject extraInfo = response.getJSONObject("extras");
-        //logger.info("Additional information received: {}", extraInfo);
+        logger.info("Additional information received: {}", extraInfo);
+        findIsland.updateState(response);
     }
 
     @Override
