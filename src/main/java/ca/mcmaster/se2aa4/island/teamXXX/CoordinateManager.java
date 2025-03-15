@@ -40,8 +40,6 @@ public class CoordinateManager{
         String currFacing = dts.toString(drone.getFacing()); // "N", "E", "W", or "S"
         String newFacing = decision.getJSONObject("parameters").getString("direction");
 
-        logger.info(currFacing + " " + newFacing);
-
         Direction currDirection = directionMap.get(currFacing);
         Direction newDirection = directionMap.get(newFacing);
 

@@ -19,6 +19,7 @@ public class Explorer implements IExplorerRaid {
     private final DirectionToString dts = DirectionToString.getInstance();
     private final Drone drone = Drone.getInstance();
     private final Actions actions = Actions.getInstance(cm, drone, dts);
+    private final Move moveController = new Move(actions);
 
     @Override
     public void initialize(String s) {
@@ -33,25 +34,39 @@ public class Explorer implements IExplorerRaid {
 
     @Override
     public String takeDecision() {
-        JSONObject decision = new JSONObject();
-        Coordinates coords = drone.getCoordinates();
-        SearchLandmarks sl = SearchLandmarks.getInstance(this.actions, decision);
-        decision = sl.search();
+        Coordinates target = new Coordinates(20, -30);
+
+        // Use the Move class to decide the next action
+        JSONObject decision = moveController.move(target);
+        logger.info(drone.getCoordinates().getX() + ", " + drone.getCoordinates().getY());
+        // If the decision is to stop, switch to searching for landmarks
+        // if (decision.has("action") && decision.getString("action").equals("stop")) {
+        //     SearchLandmarks sl = SearchLandmarks.getInstance(this.actions);
+        //     decision = sl.search();
+        // }
+
         return decision.toString();
     }
 
     @Override
     public void acknowledgeResults(String s) {
         JSONObject response = new JSONObject(new JSONTokener(new StringReader(s)));
-        //logger.info("** Response received:\n"+response.toString(2));
-        Integer cost = response.getInt("cost");
-        //logger.info("The cost of the action was {}", cost);
-        totalCost += cost;
-        //logger.info("Total cost is {}", totalCost);
-        String status = response.getString("status");
-        //logger.info("The status of the drone is {}", status);
-        JSONObject extraInfo = response.getJSONObject("extras");
-        //logger.info("Additional information received: {}", extraInfo);
+        JSONObject extras = response.getJSONObject("extras");
+
+        // Update coordinates from server response
+        if (extras.has("position")) {
+            JSONObject position = extras.getJSONObject("position");
+            int x = position.getInt("x");
+            int y = position.getInt("y");
+            drone.setCoordinates(new Coordinates(x, y));
+        }
+
+        // Update direction from server response
+        if (extras.has("direction")) {
+            String dirStr = extras.getString("direction");
+            Direction dir = Direction.valueOf(dirStr);
+            drone.setFacing(dir);
+        }
     }
 
     @Override

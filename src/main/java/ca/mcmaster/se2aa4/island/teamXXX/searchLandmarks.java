@@ -7,7 +7,6 @@ import org.json.JSONObject;
 public class SearchLandmarks implements Search {
     private final Logger logger = LogManager.getLogger();
     private final Actions actions;
-    private final JSONObject decision;
     private int spiralStep = 1; // Initial movement length
     private int movesInCurrentStep = 0;
     private int turnsInCurrentLayer = 0;
@@ -15,20 +14,20 @@ public class SearchLandmarks implements Search {
     private boolean turnState = false;
     private static SearchLandmarks instance;
 
-    private SearchLandmarks(Actions actions, JSONObject decision){
+    private SearchLandmarks(Actions actions){
         this.actions = actions;
-        this.decision = decision;
     }
 
-    public static SearchLandmarks getInstance(Actions actions, JSONObject decision){
+    public static SearchLandmarks getInstance(Actions actions){
         if (instance == null) {
-            instance = new SearchLandmarks(actions, decision);
+            instance = new SearchLandmarks(actions);
         }
         return instance;
     }
 
     @Override
     public JSONObject search(){
+        JSONObject decision = new JSONObject();
         // Always scan between actions
         if (scanFlag) {
             decision.put("action", "scan");
