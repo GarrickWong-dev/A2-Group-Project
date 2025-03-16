@@ -2,12 +2,13 @@ package ca.mcmaster.se2aa4.island.teamXXX;
 
 import org.json.JSONObject;
 
-public class FindIsland implements Search{
+public class FindIsland implements Search {
 
     private String currentHeading;
     private int scanStep = 0;
     private boolean waitingForFly = false;
-    // New flag to track if we are on the first cycle.
+    // New flag for turning then stopping.
+    private boolean waitingForStop = false;
     private boolean firstCycle = true;
 
     private EchoData forwardEcho = null;
@@ -21,6 +22,8 @@ public class FindIsland implements Search{
     private Turning turning = new Turning();
 
     private Actions actions;
+
+    private boolean process = false;
 
     private class EchoData {
         String direction;
@@ -47,6 +50,16 @@ public class FindIsland implements Search{
             return decision;
         }
         
+        // NEW: if we have just changed heading toward the ground,
+        // the next cycle should simply stop.
+        if (waitingForStop) {
+            //decision.put("action", "stop");
+            waitingForStop = false;
+          //  decision = null;
+            process = true;
+            return decision;
+        }
+        
         if (scanStep == 0) {
             forwardDir = currentHeading;
             parameters.put("direction", forwardDir);
@@ -69,68 +82,64 @@ public class FindIsland implements Search{
             return decision;
         } 
         else if (scanStep == 3) {
-            // On cycles after the first, if any echo detects "GROUND", then stop.
-            if (!firstCycle && (
-                (forwardEcho != null && "GROUND".equals(forwardEcho.found)) ||
+            // Check if any echo detected "GROUND"
+            if ((forwardEcho != null && "GROUND".equals(forwardEcho.found)) ||
                 (rightEcho != null && "GROUND".equals(rightEcho.found)) ||
-                (leftEcho != null && "GROUND".equals(leftEcho.found))
-            )) {
-                decision.put("action", "stop");
-                // Reset for the next cycle.
-                scanStep = 0;
-                forwardEcho = null;
-                rightEcho = null;
-                leftEcho = null;
-                return decision;
-            }
-            
-            // If we reach here, either it’s the first cycle or no ground was detected.
-            String chosenDir = null;
-            int chosenRange = Integer.MAX_VALUE;
-            boolean groundFound = false;
-            
-            // Check for ground detections (this block will normally not trigger on the first cycle,
-            // since the echoes should be out-of-range).
-            if (forwardEcho != null && "GROUND".equals(forwardEcho.found)) {
-                chosenDir = forwardEcho.direction;
-                chosenRange = forwardEcho.range;
-                groundFound = true;
-            }
-            if (rightEcho != null && "GROUND".equals(rightEcho.found)) {
-                if (!groundFound || rightEcho.range < chosenRange) {
+                (leftEcho != null && "GROUND".equals(leftEcho.found))) {
+                
+                // Find the echo with the smallest ground range.
+                String chosenDir = null;
+                int chosenRange = Integer.MAX_VALUE;
+                if (forwardEcho != null && "GROUND".equals(forwardEcho.found) && forwardEcho.range < chosenRange) {
+                    chosenDir = forwardEcho.direction;
+                    chosenRange = forwardEcho.range;
+                }
+                if (rightEcho != null && "GROUND".equals(rightEcho.found) && rightEcho.range < chosenRange) {
                     chosenDir = rightEcho.direction;
                     chosenRange = rightEcho.range;
-                    groundFound = true;
                 }
-            }
-            if (leftEcho != null && "GROUND".equals(leftEcho.found)) {
-                if (!groundFound || leftEcho.range < chosenRange) {
+                if (leftEcho != null && "GROUND".equals(leftEcho.found) && leftEcho.range < chosenRange) {
                     chosenDir = leftEcho.direction;
                     chosenRange = leftEcho.range;
-                    groundFound = true;
                 }
-            }
-            
-            if (groundFound) {
-                // If the closest ground detection is immediately ahead (range==0) then stop.
-                if (chosenRange == 0) {
-                    decision.put("action", "stop");
-                } 
-                else if (currentHeading.equals(chosenDir)) {
-                    decision.put("action", "fly");
-                } 
-                else {
+                
+                // If the smallest ground detection is forward, then do nothing and stop.
+                if (currentHeading.equals(chosenDir)) {
+                   // decision.put("action", "stop");
+                    process = true;
+                } else {
+                    // Otherwise, turn toward the direction with the smallest ground range.
                     parameters.put("direction", chosenDir);
                     decision.put("action", "heading");
                     decision.put("parameters", parameters);
                     currentHeading = chosenDir;
-                    waitingForFly = true;
+                    // Set flag so that the next cycle will immediately stop.
+                    waitingForStop = true;
                 }
+                // Reset scan state.
+                scanStep = 0;
+                forwardEcho = null;
+                rightEcho = null;
+                leftEcho = null;
+                firstCycle = false;
+                return decision;
             } else {
                 // No ground detected – use the combined range score algorithm.
-                int forwardRange = (forwardEcho != null) ? forwardEcho.range : 0;
-                int rightRange = (rightEcho != null) ? rightEcho.range : 0;
-                int leftRange = (leftEcho != null) ? leftEcho.range : 0;
+                String chosenDir = null;
+                int forwardRange = 0;
+                if (forwardEcho != null) {
+                    forwardRange = forwardEcho.range;
+                }
+
+                int rightRange = 0;
+                if (rightEcho != null) {
+                    rightRange = rightEcho.range;
+                }
+
+                int leftRange = 0;
+                if (leftEcho != null) {
+                    leftRange = leftEcho.range;
+                }
 
                 int diagRightScore = forwardRange + rightRange;
                 int diagLeftScore = forwardRange + leftRange;
@@ -150,18 +159,18 @@ public class FindIsland implements Search{
                     currentHeading = chosenDir;
                     waitingForFly = true;
                 }
+                // Reset scan state.
+                scanStep = 0;
+                forwardEcho = null;
+                rightEcho = null;
+                leftEcho = null;
+                return decision;
             }
-            // Mark that we have completed the first cycle.
-            firstCycle = false;
-            // Reset scan state for the next cycle.
-            scanStep = 0;
-            forwardEcho = null;
-            rightEcho = null;
-            leftEcho = null;
-            return decision;
         }
         
-        decision.put("action", "stop");
+       // decision.put("action", "stop");
+        process = true;
+
         return decision;
     }
     
@@ -186,4 +195,18 @@ public class FindIsland implements Search{
             scanStep = 3;
         }
     }
+
+    public boolean processDone()
+    {
+        return process;
+    }
+
+    public String getCurrentHeading() 
+    {
+        return currentHeading;
+    }
+
 }
+
+
+

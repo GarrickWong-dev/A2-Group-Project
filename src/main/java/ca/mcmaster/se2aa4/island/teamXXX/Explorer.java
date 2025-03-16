@@ -21,6 +21,9 @@ public class Explorer implements IExplorerRaid {
     private final Actions actions = Actions.getInstance(cm, drone, dts);
     private String currentHeading;
     private FindIsland findIsland;
+    private IslandDimensions islandDimensions; 
+    private boolean islandFind = false;
+    private boolean islandDimensionsInitialized = false;
 
     @Override
     public void initialize(String s) {
@@ -33,13 +36,35 @@ public class Explorer implements IExplorerRaid {
         logger.info("The drone is facing {}", direction);
         logger.info("Battery level is {}", batteryLevel);
         findIsland = new FindIsland(currentHeading);
+
+        islandDimensions = new IslandDimensions(currentHeading);
     }
 
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
         Coordinates coords = drone.getCoordinates();
-        decision = findIsland.search();
+
+         if (!islandFind)
+         {
+            decision = findIsland.search();
+             if(findIsland.processDone())
+             {
+                 islandFind = true;
+                 logger.info("HEREEEEEEEEEE");
+             }
+         }
+        if (islandFind)
+        {
+             if (!islandDimensionsInitialized) 
+             {
+                islandDimensions = new IslandDimensions(findIsland.getCurrentHeading());
+                islandDimensionsInitialized = true;
+            }
+            decision = islandDimensions.measurer();
+        }
+
+    
         return decision.toString();
     }
 
@@ -56,6 +81,10 @@ public class Explorer implements IExplorerRaid {
         JSONObject extraInfo = response.getJSONObject("extras");
         logger.info("Additional information received: {}", extraInfo);
         findIsland.updateState(response);
+        logger.info("Dimensions measured: Length = " + islandDimensions.getMeasuredLength() +
+               ", Width = " + islandDimensions.getMeasuredWidth());
+        // Update the state of the island measurer based on echo responses.
+        islandDimensions.updateState(response);
     }
 
     @Override
@@ -63,3 +92,5 @@ public class Explorer implements IExplorerRaid {
         return "no creek found";
     }
 }
+
+
