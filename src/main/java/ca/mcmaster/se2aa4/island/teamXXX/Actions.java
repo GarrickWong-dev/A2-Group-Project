@@ -6,19 +6,18 @@ public class Actions {
     private static Actions instance;
     private final CoordinateManager cm;
     private final Direction[] directions;
-    private final DirectionToString converter;
+    private final DirectionToString converter = DirectionToString.getInstance();
     private final Drone drone;
 
-    private Actions(CoordinateManager cm, Drone drone, DirectionToString converter){
+    private Actions(CoordinateManager cm, Drone drone){
         this.directions = Direction.values();
         this.cm = cm;
         this.drone = drone;
-        this.converter = converter;
     }
 
-    public static Actions getInstance(CoordinateManager cm, Drone drone, DirectionToString converter) {
+    public static Actions getInstance(CoordinateManager cm, Drone drone) {
         if (instance == null) {
-            instance = new Actions(cm, drone, converter);
+            instance = new Actions(cm, drone);
         }
         return instance;
     }

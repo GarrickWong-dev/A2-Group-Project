@@ -4,23 +4,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
-public class SearchLandmarks implements Search {
+public class Spiral implements Search {
     private final Logger logger = LogManager.getLogger();
     private final Actions actions;
-    private int spiralStep = 1; // Initial movement length
+    private int spiralStep = 0; // Initial movement length
     private int movesInCurrentStep = 0;
     private int turnsInCurrentLayer = 0;
     private boolean scanFlag = true;
-    private boolean turnState = false;
-    private static SearchLandmarks instance;
+    private boolean turnState = true;
+    private static Spiral instance;
 
-    private SearchLandmarks(Actions actions){
+    private Spiral(Actions actions){
         this.actions = actions;
     }
 
-    public static SearchLandmarks getInstance(Actions actions){
+    public static Spiral getInstance(Actions actions){
         if (instance == null) {
-            instance = new SearchLandmarks(actions);
+            instance = new Spiral(actions);
         }
         return instance;
     }
@@ -33,13 +33,12 @@ public class SearchLandmarks implements Search {
             decision.put("action", "scan");
             scanFlag = false; // Reset scan flag after scanning
         } else {
-            if (turnState) {
+            if (turnState || spiralStep == 0) {
                 // Perform spiral turn pattern
                 actions.turnLeft(decision);
                 turnsInCurrentLayer++;
 
-                // Spiral pattern logic: 2 turns per layer
-                if (turnsInCurrentLayer >= 2) {
+                if(spiralStep == 0 && turnsInCurrentLayer >= 3 || turnsInCurrentLayer >= 2 && spiralStep != 0){
                     spiralStep++; // Increase movement length
                     turnsInCurrentLayer = 0;
                 }
