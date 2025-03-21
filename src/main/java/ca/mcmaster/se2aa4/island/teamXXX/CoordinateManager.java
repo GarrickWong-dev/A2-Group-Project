@@ -11,14 +11,14 @@ public class CoordinateManager{
     private final DirectionToString dts;
     private final Logger logger = LogManager.getLogger();
 
-    private CoordinateManager(){
-        this.drone = Drone.getInstance();
+    private CoordinateManager(String initialHeading){
+        this.drone = Drone.getInstance(initialHeading);
         this.dts = DirectionToString.getInstance();
     }
 
-    public static CoordinateManager getInstance(){
+    public static CoordinateManager getInstance(String initialHeading){
         if (instance == null) {
-            instance = new CoordinateManager();
+            instance = new CoordinateManager(initialHeading);
         }
         return instance;
     }

@@ -1,8 +1,11 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 import org.json.JSONObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Actions {
+    private final Logger logger = LogManager.getLogger();
     private static Actions instance;
     private final CoordinateManager cm;
     private final Direction[] directions;
@@ -25,6 +28,7 @@ public class Actions {
 
     public void turnLeft(JSONObject decision){
         Direction heading = directions[(directionIndex() - 1 + directions.length) % directions.length];
+        logger.info("heading: " + heading );
         decision.put("action", "heading");
         decision.put("parameters", new JSONObject().put("direction", converter.toString(heading)));
         cm.updateCoords(decision);
