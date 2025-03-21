@@ -4,20 +4,17 @@ import org.json.JSONObject;
 
 public class Actions {
     private static Actions instance;
-    private final CoordinateManager cm;
-    private final Direction[] directions;
+    private final CoordinateManager cm = CoordinateManager.getInstance();
+    private final Direction[] directions = Direction.values();
     private final DirectionToString converter = DirectionToString.getInstance();
-    private final Drone drone;
+    private final Drone drone = Drone.getInstance();
 
-    private Actions(CoordinateManager cm, Drone drone){
-        this.directions = Direction.values();
-        this.cm = cm;
-        this.drone = drone;
+    private Actions(){
     }
 
-    public static Actions getInstance(CoordinateManager cm, Drone drone) {
+    public static Actions getInstance() {
         if (instance == null) {
-            instance = new Actions(cm, drone);
+            instance = new Actions();
         }
         return instance;
     }
