@@ -1,77 +1,64 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 import java.io.StringReader;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-
 import eu.ace_design.island.bot.IExplorerRaid;
 
 public class Explorer implements IExplorerRaid {
 
     private final Logger logger = LogManager.getLogger();
-    private int move = 0; //Decides what action to do
-    private Integer totalCost = 0; //Nothing right now
-
-    private final CoordinateManager cm = CoordinateManager.getInstance();
-    private final DirectionToString dts = DirectionToString.getInstance();
-    private final Drone drone = Drone.getInstance();
-    private final Actions actions = Actions.getInstance(cm, drone, dts);
+    private Integer totalCost = 0;
+    private  CoordinateManager cm; //= CoordinateManager.getInstance();
+    private  DirectionToString dts = DirectionToString.getInstance();
+    private  Drone drone; //= Drone.getInstance();
+    private Actions actions;// = Actions.getInstance(cm, drone, dts);
     private String currentHeading;
     private FindIsland findIsland;
     private IslandDimensions islandDimensions; 
     private boolean islandFind = false;
-    private boolean islandDimensionsInitialized = false;
 
     @Override
     public void initialize(String s) {
         logger.info("** Initializing the Exploration Command Center");
         JSONObject info = new JSONObject(new JSONTokener(new StringReader(s)));
-        logger.info("** Initialization info:\n {}",info.toString(2));
+        logger.info("** Initialization info:\n {}", info.toString(2));
         currentHeading = info.getString("heading");
-        String direction = info.getString("heading");
         Integer batteryLevel = info.getInt("budget");
-        logger.info("The drone is facing {}", direction);
+        logger.info("The drone is facing {}", currentHeading);
         logger.info("Battery level is {}", batteryLevel);
-        findIsland = new FindIsland(currentHeading);
-
+        //pass the Actions instance to FindIsland.
+        cm = CoordinateManager.getInstance(currentHeading);
+        drone = Drone.getInstance(currentHeading);
+        actions = Actions.getInstance(cm, drone, dts);
+        findIsland = new FindIsland(currentHeading, actions);
         islandDimensions = new IslandDimensions(currentHeading);
+      //  actions = Actions.getInstance(cm, drone, dts);
     }
 
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
-        Coordinates coords = drone.getCoordinates();
-
-         if (!islandFind)
-         {
+        if (!islandFind) {
             decision = findIsland.search();
-             if(findIsland.processDone())
-             {
-                 islandFind = true;
-                 logger.info("HEREEEEEEEEEE");
-             }
-         }
-        if (islandFind)
-        {
-             if (!islandDimensionsInitialized) 
-             {
-                islandDimensions = new IslandDimensions(findIsland.getCurrentHeading());
-                islandDimensionsInitialized = true;
+            if (findIsland.processDone()) {
+                islandFind = true;
+                logger.info("Search process complete. Island found.");
             }
-            decision = islandDimensions.measurer();
         }
-
-    
+        if (islandFind) {
+            decision.put("action", "stop");
+        }
+        logger.info(drone.getCoordinates().getX() + ", " + drone.getCoordinates().getY());
         return decision.toString();
     }
 
     @Override
     public void acknowledgeResults(String s) {
         JSONObject response = new JSONObject(new JSONTokener(new StringReader(s)));
-        logger.info("** Response received:\n"+response.toString(2));
+        logger.info("** Response received:\n" + response.toString(2));
         Integer cost = response.getInt("cost");
         logger.info("The cost of the action was {}", cost);
         totalCost += cost;
@@ -82,8 +69,7 @@ public class Explorer implements IExplorerRaid {
         logger.info("Additional information received: {}", extraInfo);
         findIsland.updateState(response);
         logger.info("Dimensions measured: Length = " + islandDimensions.getMeasuredLength() +
-               ", Width = " + islandDimensions.getMeasuredWidth());
-        // Update the state of the island measurer based on echo responses.
+                    ", Width = " + islandDimensions.getMeasuredWidth());
         islandDimensions.updateState(response);
     }
 
@@ -92,5 +78,4 @@ public class Explorer implements IExplorerRaid {
         return "no creek found";
     }
 }
-
 

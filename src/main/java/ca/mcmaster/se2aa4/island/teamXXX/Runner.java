@@ -12,7 +12,7 @@ public class Runner {
             run(Explorer.class)
                     .exploring(new File(filename))
                     .withSeed(42L)
-                    .startingAt(5, 70, "NORTH")
+                    .startingAt(30, 5, "NORTH")
                     .backBefore(7000)
                     .withCrew(5)
                     .collecting(1000, "WOOD")
