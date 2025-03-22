@@ -4,6 +4,7 @@ import java.io.StringReader;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -12,18 +13,11 @@ import eu.ace_design.island.bot.IExplorerRaid;
 public class Explorer implements IExplorerRaid {
 
     private final Logger logger = LogManager.getLogger();
-    private int move = 0; //Decides what action to do
-    private Integer totalCost = 0; //Nothing right now
-
-    private final CoordinateManager cm = CoordinateManager.getInstance();
-    private final DirectionToString dts = DirectionToString.getInstance();
-    private final Drone drone = Drone.getInstance();
-    private final Actions actions = Actions.getInstance(cm, drone, dts);
-    private String currentHeading;
-    private FindIsland findIsland;
-    private IslandDimensions islandDimensions; 
-    private boolean islandFind = false;
-    private boolean islandDimensionsInitialized = false;
+    private final Actions actions = Actions.getInstance();
+    private Integer batteryLevel;
+    private CreekContainer creekContainer = new CreekContainer();
+    private EmergencySiteContainer siteContainer = new EmergencySiteContainer();
+    private final Integer BATTERY_LIMIT = 150;
 
     @Override
     public void initialize(String s) {
@@ -32,7 +26,7 @@ public class Explorer implements IExplorerRaid {
         logger.info("** Initialization info:\n {}",info.toString(2));
         currentHeading = info.getString("heading");
         String direction = info.getString("heading");
-        Integer batteryLevel = info.getInt("budget");
+        batteryLevel = info.getInt("budget");
         logger.info("The drone is facing {}", direction);
         logger.info("Battery level is {}", batteryLevel);
         findIsland = new FindIsland(currentHeading);
@@ -42,55 +36,67 @@ public class Explorer implements IExplorerRaid {
 
     @Override
     public String takeDecision() {
-        JSONObject decision = new JSONObject();
-        Coordinates coords = drone.getCoordinates();
-
-         if (!islandFind)
-         {
-            decision = findIsland.search();
-             if(findIsland.processDone())
-             {
-                 islandFind = true;
-                 logger.info("HEREEEEEEEEEE");
-             }
-         }
-        if (islandFind)
-        {
-             if (!islandDimensionsInitialized) 
-             {
-                islandDimensions = new IslandDimensions(findIsland.getCurrentHeading());
-                islandDimensionsInitialized = true;
-            }
-            decision = islandDimensions.measurer();
+        Coordinates target = new Coordinates(20, -30);
+        logger.info(batteryLevel);
+        if(batteryLevel < BATTERY_LIMIT){
+            JSONObject decision = new JSONObject();
+            decision.put("action", "stop");
+            return decision.toString();
         }
 
-    
-        return decision.toString();
+        // Use the Move class to decide the next action
+        // Move moveController = new Move(actions);
+        // JSONObject decision = moveController.move(target);
+        // return decision.toString();
+        Spiral sl = Spiral.getInstance(this.actions);
+        return sl.search().toString();
     }
 
     @Override
     public void acknowledgeResults(String s) {
         JSONObject response = new JSONObject(new JSONTokener(new StringReader(s)));
-        logger.info("** Response received:\n"+response.toString(2));
         Integer cost = response.getInt("cost");
-        logger.info("The cost of the action was {}", cost);
-        totalCost += cost;
-        logger.info("Total cost is {}", totalCost);
-        String status = response.getString("status");
-        logger.info("The status of the drone is {}", status);
-        JSONObject extraInfo = response.getJSONObject("extras");
-        logger.info("Additional information received: {}", extraInfo);
-        findIsland.updateState(response);
-        logger.info("Dimensions measured: Length = " + islandDimensions.getMeasuredLength() +
-               ", Width = " + islandDimensions.getMeasuredWidth());
-        // Update the state of the island measurer based on echo responses.
-        islandDimensions.updateState(response);
+        JSONObject extras = response.getJSONObject("extras");
+        Drone drone = Drone.getInstance();
+
+        batteryLevel -= cost;
+
+        if(extras.has("creeks")) {
+            JSONArray creeks = extras.getJSONArray("creeks");
+            if(!creeks.isEmpty()){
+                creekContainer.put(creeks.getString(0), drone.getCoordinates());
+            }
+        }
+        if(extras.has("sites")) {
+            JSONArray sites = extras.getJSONArray("sites");
+            if(!sites.isEmpty()){
+                siteContainer.put(sites.getString(0), drone.getCoordinates());
+            }
+        }
     }
 
     @Override
     public String deliverFinalReport() {
+        logger.info(closestCreek());
         return "no creek found";
     }
+
+    private String closestCreek(){
+        double shortestDist = -1;
+        String closestCreek = "";
+        for(String creek: creekContainer){
+            for(String site: siteContainer){
+                double dist = distance(creekContainer.getValue(creek), siteContainer.getValue(site));
+                if(shortestDist == -1 || shortestDist > dist){
+                    shortestDist = dist;
+                    closestCreek = creek;
+                }
+            }
+        }
+        return closestCreek;
+    }
+
+    private double distance(Coordinates a, Coordinates b){
+        return Math.sqrt(Math.pow(a.getX() - b.getX(), 2) + Math.pow(a.getY() - b.getY(), 2));
+    }
 }
-
-
