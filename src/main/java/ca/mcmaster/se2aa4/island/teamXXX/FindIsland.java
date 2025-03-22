@@ -19,12 +19,20 @@ public class FindIsland implements Search
 
     private final Turning turning = new Turning();
     private final Actions actions;
+    private static FindIsland instance;
 
     private final EchoProcessor echoProcessor = new EchoProcessor();
 
-    public FindIsland(String initHeading, Actions actions) {
+    private FindIsland(String initHeading, Actions actions) {
         this.currentHeading = initHeading;
         this.actions = actions;
+    }
+
+     public static FindIsland getInstance(String initHeading, Actions actions){
+        if (instance == null) {
+            instance = new FindIsland(initHeading, actions);
+        }
+        return instance;
     }
     
     @Override

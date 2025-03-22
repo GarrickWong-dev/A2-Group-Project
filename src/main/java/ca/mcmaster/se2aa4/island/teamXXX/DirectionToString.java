@@ -23,4 +23,20 @@ public class DirectionToString {
         }
         return null;
     }
+
+    public Direction fromString(String initialHeaing) {
+        char charac = initialHeaing.toUpperCase().charAt(0);
+        switch (charac) {
+            case 'N':
+                return Direction.NORTH;
+            case 'E':
+                return Direction.EAST;
+            case 'S':
+                return Direction.SOUTH;
+            case 'W':
+                return Direction.WEST;
+            default:
+                throw new IllegalArgumentException("Invalid direction: " + initialHeaing);
+        }
+    }
 }
