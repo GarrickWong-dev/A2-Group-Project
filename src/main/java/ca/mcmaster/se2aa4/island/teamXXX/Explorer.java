@@ -46,7 +46,8 @@ public class Explorer implements IExplorerRaid {
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
-        if (!islandFind) {
+        if (!islandFind) 
+        {
             decision = findIsland.search();
             if (findIsland.processDone()) {
                 islandFind = true;
@@ -88,16 +89,15 @@ public class Explorer implements IExplorerRaid {
                 islandMeasured = true;
             }
          }
-
          if (islandMeasured)
          {
             logger.info("First turning coordinates " + islandDimensions.getFirstTurning().getX() + ", " + islandDimensions.getFirstTurning().getY());
             logger.info("End turning coordinates " + islandDimensions.getLastTurning().getX() + ", " + islandDimensions.getLastTurning().getY());
+            logger.info(islandDimensions.getMidCoordinates().getX() + ", " + islandDimensions.getMidCoordinates().getY());
             //spiral 
             decision.put("action", "stop");
          }
 
-        logger.info(drone.getCoordinates().getX() + ", " + drone.getCoordinates().getY());
         return decision.toString();
     }
 

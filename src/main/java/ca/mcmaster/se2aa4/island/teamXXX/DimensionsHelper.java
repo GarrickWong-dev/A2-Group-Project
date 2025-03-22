@@ -3,11 +3,9 @@ package ca.mcmaster.se2aa4.island.teamXXX;
 import org.json.JSONObject;
 
 public class DimensionsHelper {
-    private Turning turning;
     private Actions actions;
 
-    public DimensionsHelper(Turning turning, Actions actions) {
-        this.turning = turning;
+    public DimensionsHelper(Actions actions) {
         this.actions = actions;
     }
 
@@ -40,11 +38,11 @@ public class DimensionsHelper {
     {
         if ("right".equals(side)) 
         {
-            return turning.turnRight(currentHeading);
+            return actions.getRight();
         } 
         else 
         {
-            return turning.turnLeft(currentHeading);
+            return actions.getLeft();
         }
     }
     

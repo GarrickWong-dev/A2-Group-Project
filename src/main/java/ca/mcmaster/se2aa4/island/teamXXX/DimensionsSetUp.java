@@ -21,13 +21,12 @@ public class DimensionsSetUp {
     private String lastEchoDirection = "N";
     
     private Actions actions;
-    private final Turning turning = new Turning();
     private DimensionsHelper helper;
 
     public DimensionsSetUp(String initHeading, Actions actions) {
         this.currentHeading = initHeading;
         this.actions = actions;
-        this.helper = new DimensionsHelper(turning, actions);
+        this.helper = new DimensionsHelper(actions);
     }
     
     public JSONObject setupDimensions() {

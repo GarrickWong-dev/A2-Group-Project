@@ -8,7 +8,6 @@ public class IslandDimensions {
     private final Logger logger = LogManager.getLogger();
 
     private int state = 0;
-    private final Turning turning = new Turning();
     private String currentHeading;
     private final Actions actions;
     private final String echoHeading;  
@@ -77,24 +76,24 @@ public class IslandDimensions {
                     }
 
                 case 2:
-                    if (turning.turnRight(currentHeading).equals(echoHeading)) 
+                    if (actions.getRight().equals(echoHeading)) 
                     {
                         actions.turnRight(decision);
                         currentHeading = echoHeading;
-                        lengthEchoDirection = turning.turnRight(currentHeading);
+                        lengthEchoDirection = actions.getRight();
                     } 
-                    else if (turning.turnLeft(currentHeading).equals(echoHeading)) 
+                    else if (actions.getLeft().equals(echoHeading)) 
                     {
                         actions.turnLeft(decision);
                         currentHeading = echoHeading;
-                        lengthEchoDirection = turning.turnLeft(currentHeading);
+                        lengthEchoDirection = actions.getLeft();
                     } 
                     else 
                     {
                         //fallback
                         actions.turnLeft(decision);
                         currentHeading = echoHeading;
-                        lengthEchoDirection = turning.turnLeft(currentHeading);
+                        lengthEchoDirection = actions.getLeft();
                     }
                     state = 3;
                     return decision;
@@ -184,5 +183,12 @@ public class IslandDimensions {
 
     public Coordinates getLastTurning() {
         return turnContainer.getLastTurning();
+    }
+
+    public Coordinates getMidCoordinates()
+    {
+        int xCoord = (turnContainer.getFirstTurning().getX() + turnContainer.getLastTurning().getX()) / 2;
+        int yCoord = (turnContainer.getFirstTurning().getY() + turnContainer.getLastTurning().getY()) / 2;
+        return  new Coordinates(xCoord, yCoord);
     }
 }

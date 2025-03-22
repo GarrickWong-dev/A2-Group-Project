@@ -17,7 +17,6 @@ public class FindIsland implements Search
     private String rightDir;
     private String leftDir;
 
-    private final Turning turning = new Turning();
     private final Actions actions;
     private static FindIsland instance;
 
@@ -61,13 +60,13 @@ public class FindIsland implements Search
         //echo right
         else if (scanStep == 1) 
         {
-            rightDir = turning.turnRight(currentHeading);
+            rightDir = actions.getRight();
             return DecisionBuilder.createEchoDecision(rightDir);
         }  
         //echo left
         else if (scanStep == 2) 
         {
-            leftDir = turning.turnLeft(currentHeading);
+            leftDir = actions.getLeft();
             return DecisionBuilder.createEchoDecision(leftDir);
         } 
         //processing echo responses
@@ -84,11 +83,11 @@ public class FindIsland implements Search
                 else 
                 {
                     //turn towards the ground range with lowest range
-                    if (chosenDir.equals(turning.turnRight(currentHeading))) 
+                    if (chosenDir.equals(actions.getRight())) 
                     {
                         actions.turnRight(decision);
                     } 
-                    else if (chosenDir.equals(turning.turnLeft(currentHeading))) 
+                    else if (chosenDir.equals(actions.getLeft())) 
                     {
                         actions.turnLeft(decision);
                     }
@@ -107,7 +106,7 @@ public class FindIsland implements Search
                 
                 if (diagRightScore >= diagLeftScore) 
                 {
-                    String newHeading = turning.turnRight(currentHeading);
+                    String newHeading = actions.getRight();
                     if (currentHeading.equals(newHeading)) 
                     {
                         actions.moveForward(decision);
@@ -121,7 +120,7 @@ public class FindIsland implements Search
                 } 
                 else 
                 {
-                    String newHeading = turning.turnLeft(currentHeading);
+                    String newHeading = actions.getLeft();
                     if (currentHeading.equals(newHeading)) 
                     {
                         actions.moveForward(decision);

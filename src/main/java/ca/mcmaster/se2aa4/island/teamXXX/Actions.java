@@ -27,26 +27,37 @@ public class Actions {
     }
 
     public void turnLeft(JSONObject decision){
-        Direction heading = directions[(directionIndex() - 1 + directions.length) % directions.length];
-        logger.info("heading: " + heading );
+     //   Direction heading = directions[(directionIndex() - 1 + directions.length) % directions.length];
+     //   logger.info("heading: " + heading );
         decision.put("action", "heading");
-        decision.put("parameters", new JSONObject().put("direction", converter.toString(heading)));
+        decision.put("parameters", new JSONObject().put("direction", getLeft()));
         cm.updateCoords(decision);
-        drone.setFacing(heading);
+        drone.setFacing(converter.fromString(getLeft()));
     }
 
     public void turnRight(JSONObject decision){
-        Direction heading = directions[(directionIndex() + 1) % directions.length];
+   //     Direction heading = directions[(directionIndex() + 1) % directions.length];
         decision.put("action", "heading");
-        decision.put("parameters", new JSONObject().put("direction", converter.toString(heading)));
+        decision.put("parameters", new JSONObject().put("direction", getRight()));
         cm.updateCoords(decision);
-        drone.setFacing(heading);
+        drone.setFacing(converter.fromString(getRight()));
     }
 
     public void moveForward(JSONObject decision){
         decision.put("action", "fly");
         cm.updateCoords(decision);
     }
+
+    public String getRight()
+    {
+        return  converter.toString(directions[(directionIndex() + 1) % directions.length]);
+    }
+
+    public String getLeft()
+    {
+        return  converter.toString(directions[(directionIndex() - 1 + directions.length) % directions.length]);
+    }
+
 
     private int directionIndex(){
         for(int i = 0; i < directions.length; i++){
