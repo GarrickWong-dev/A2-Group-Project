@@ -2,211 +2,183 @@ package ca.mcmaster.se2aa4.island.teamXXX;
 
 import org.json.JSONObject;
 
-public class FindIsland implements Search {
-
+public class FindIsland implements Search 
+{
+    //current orientation and process variables
     private String currentHeading;
     private int scanStep = 0;
     private boolean waitingForFly = false;
-    // New flag for turning then stopping.
     private boolean waitingForStop = false;
     private boolean firstCycle = true;
-
-    private EchoData forwardEcho = null;
-    private EchoData rightEcho = null;
-    private EchoData leftEcho = null;
-
-    private String forwardDir = null;
-    private String rightDir = null;
-    private String leftDir = null;
-
-    private Turning turning = new Turning();
-
-    private Actions actions;
-
     private boolean process = false;
 
-    private class EchoData {
-        String direction;
-        String found;
-        int range;
-        public EchoData(String direction, String found, int range) {
-            this.direction = direction;
-            this.found = found;
-            this.range = range;
-        }
+    //directions used in echo scans
+    private String forwardDir;
+    private String rightDir;
+    private String leftDir;
+
+    private final Actions actions;
+    private static FindIsland instance;
+
+    private final EchoProcessor echoProcessor = new EchoProcessor();
+
+    private FindIsland(String initHeading, Actions actions) {
+        this.currentHeading = initHeading;
+        this.actions = actions;
     }
 
-    public FindIsland(String initHeading) {
-        this.currentHeading = initHeading;
+     public static FindIsland getInstance(String initHeading, Actions actions){
+        if (instance == null) {
+            instance = new FindIsland(initHeading, actions);
+        }
+        return instance;
     }
     
+    @Override
     public JSONObject search() {
         JSONObject decision = new JSONObject();
-        JSONObject parameters = new JSONObject();
         
-        if (waitingForFly) {
-            decision.put("action", "fly");
+        if (waitingForFly) 
+        {
+            actions.moveForward(decision);
             waitingForFly = false;
             return decision;
         }
-        
-        // NEW: if we have just changed heading toward the ground,
-        // the next cycle should simply stop.
-        if (waitingForStop) {
-            //decision.put("action", "stop");
+        if (waitingForStop) 
+        {
             waitingForStop = false;
-          //  decision = null;
             process = true;
             return decision;
         }
         
-        if (scanStep == 0) {
+        //echo forward
+        if (scanStep == 0) 
+        {
             forwardDir = currentHeading;
-            parameters.put("direction", forwardDir);
-            decision.put("action", "echo");
-            decision.put("parameters", parameters);
-            return decision;
+            return DecisionBuilder.createEchoDecision(forwardDir);
         } 
-        else if (scanStep == 1) {
-            rightDir = turning.turnRight(currentHeading);
-            parameters.put("direction", rightDir);
-            decision.put("action", "echo");
-            decision.put("parameters", parameters);
-            return decision;
+        //echo right
+        else if (scanStep == 1) 
+        {
+            rightDir = actions.getRight();
+            return DecisionBuilder.createEchoDecision(rightDir);
+        }  
+        //echo left
+        else if (scanStep == 2) 
+        {
+            leftDir = actions.getLeft();
+            return DecisionBuilder.createEchoDecision(leftDir);
         } 
-        else if (scanStep == 2) {
-            leftDir = turning.turnLeft(currentHeading);
-            parameters.put("direction", leftDir);
-            decision.put("action", "echo");
-            decision.put("parameters", parameters);
-            return decision;
-        } 
-        else if (scanStep == 3) {
-            // Check if any echo detected "GROUND"
-            if ((forwardEcho != null && "GROUND".equals(forwardEcho.found)) ||
-                (rightEcho != null && "GROUND".equals(rightEcho.found)) ||
-                (leftEcho != null && "GROUND".equals(leftEcho.found))) {
-                
-                // Find the echo with the smallest ground range.
-                String chosenDir = null;
-                int chosenRange = Integer.MAX_VALUE;
-                if (forwardEcho != null && "GROUND".equals(forwardEcho.found) && forwardEcho.range < chosenRange) {
-                    chosenDir = forwardEcho.direction;
-                    chosenRange = forwardEcho.range;
-                }
-                if (rightEcho != null && "GROUND".equals(rightEcho.found) && rightEcho.range < chosenRange) {
-                    chosenDir = rightEcho.direction;
-                    chosenRange = rightEcho.range;
-                }
-                if (leftEcho != null && "GROUND".equals(leftEcho.found) && leftEcho.range < chosenRange) {
-                    chosenDir = leftEcho.direction;
-                    chosenRange = leftEcho.range;
-                }
-                
-                // If the smallest ground detection is forward, then do nothing and stop.
-                if (currentHeading.equals(chosenDir)) {
-                   // decision.put("action", "stop");
+        //processing echo responses
+        else if (scanStep == 3) 
+        {
+            if (echoProcessor.hasGroundDetected()) 
+            {
+                String chosenDir = echoProcessor.chooseBestDirection();
+                //if lowest ground range is ahead
+                if (currentHeading.equals(chosenDir)) 
+                {
                     process = true;
-                } else {
-                    // Otherwise, turn toward the direction with the smallest ground range.
-                    parameters.put("direction", chosenDir);
-                    decision.put("action", "heading");
-                    decision.put("parameters", parameters);
+                } 
+                else 
+                {
+                    //turn towards the ground range with lowest range
+                    if (chosenDir.equals(actions.getRight())) 
+                    {
+                        actions.turnRight(decision);
+                    } 
+                    else if (chosenDir.equals(actions.getLeft())) 
+                    {
+                        actions.turnLeft(decision);
+                    }
                     currentHeading = chosenDir;
-                    // Set flag so that the next cycle will immediately stop.
                     waitingForStop = true;
                 }
-                // Reset scan state.
-                scanStep = 0;
-                forwardEcho = null;
-                rightEcho = null;
-                leftEcho = null;
-                firstCycle = false;
+                resetScanState();
                 return decision;
-            } else {
-                // No ground detected – use the combined range score algorithm.
-                String chosenDir = null;
-                int forwardRange = 0;
-                if (forwardEcho != null) {
-                    forwardRange = forwardEcho.range;
-                }
-
-                int rightRange = 0;
-                if (rightEcho != null) {
-                    rightRange = rightEcho.range;
-                }
-
-                int leftRange = 0;
-                if (leftEcho != null) {
-                    leftRange = leftEcho.range;
-                }
-
-                int diagRightScore = forwardRange + rightRange;
-                int diagLeftScore = forwardRange + leftRange;
+            } 
+            //no gorund detected
+            else 
+            {
+                //turn towards direction that has greatest range
+                int diagRightScore = echoProcessor.getRightRange();
+                int diagLeftScore  = echoProcessor.getLeftRange();
                 
-                if (diagRightScore >= diagLeftScore) {
-                    chosenDir = turning.turnRight(currentHeading);
-                } else {
-                    chosenDir = turning.turnLeft(currentHeading);
+                if (diagRightScore >= diagLeftScore) 
+                {
+                    String newHeading = actions.getRight();
+                    if (currentHeading.equals(newHeading)) 
+                    {
+                        actions.moveForward(decision);
+                    } 
+                    else 
+                    {
+                        actions.turnRight(decision);
+                        currentHeading = newHeading;
+                        waitingForFly = true;
+                    }
+                } 
+                else 
+                {
+                    String newHeading = actions.getLeft();
+                    if (currentHeading.equals(newHeading)) 
+                    {
+                        actions.moveForward(decision);
+                    } 
+                    else 
+                    {
+                        actions.turnLeft(decision);
+                        currentHeading = newHeading;
+                        waitingForFly = true;
+                    }
                 }
-                
-                if (currentHeading.equals(chosenDir)) {
-                    decision.put("action", "fly");
-                } else {
-                    parameters.put("direction", chosenDir);
-                    decision.put("action", "heading");
-                    decision.put("parameters", parameters);
-                    currentHeading = chosenDir;
-                    waitingForFly = true;
-                }
-                // Reset scan state.
-                scanStep = 0;
-                forwardEcho = null;
-                rightEcho = null;
-                leftEcho = null;
+                resetScanState();
                 return decision;
             }
         }
-        
-       // decision.put("action", "stop");
         process = true;
-
         return decision;
     }
-    
-    public void updateState(JSONObject response) {
+     
+    public void updateState(JSONObject response) 
+    {
         JSONObject extras = response.getJSONObject("extras");
-        if (!extras.has("found") || !extras.has("range")) {
-            return; 
+        if (!extras.has("found") || !extras.has("range")) 
+        {
+            return;
         }
         String found = extras.getString("found");
         int range = extras.getInt("range");
         
-        if (scanStep == 0) {
-            forwardEcho = new EchoData(forwardDir, found, range);
+        //update echo data based on the current scan step
+        if (scanStep == 0) 
+        {
+            echoProcessor.updateEcho(scanStep, forwardDir, found, range);
             scanStep = 1;
         } 
-        else if (scanStep == 1) {
-            rightEcho = new EchoData(rightDir, found, range);
+        else if (scanStep == 1) 
+        {
+            echoProcessor.updateEcho(scanStep, rightDir, found, range);
             scanStep = 2;
         } 
-        else if (scanStep == 2) {
-            leftEcho = new EchoData(leftDir, found, range);
+        else if (scanStep == 2) 
+        {
+            echoProcessor.updateEcho(scanStep, leftDir, found, range);
             scanStep = 3;
         }
     }
 
-    public boolean processDone()
-    {
+    private void resetScanState() {
+        scanStep = 0;
+        echoProcessor.reset();
+        firstCycle = false;
+    }
+    
+    public boolean processDone() {
         return process;
     }
 
-    public String getCurrentHeading() 
-    {
+    public String getCurrentHeading() {
         return currentHeading;
     }
-
 }
-
-
-

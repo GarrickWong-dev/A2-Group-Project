@@ -5,14 +5,15 @@ public class Drone {
     private Direction facing;
     private Coordinates coords;
 
-    private Drone(){
+    private Drone(Direction facing){
         this.coords = new Coordinates(0,0);
-        this.facing = Direction.EAST;
+    //    this.facing = Direction.EAST;
+        this.facing = facing;
     }
 
-    public static Drone getInstance(){
+    public static Drone getInstance(Direction facing){
         if (instance == null) {
-            instance = new Drone();
+            instance = new Drone(facing);
         }
         return instance;
     }
