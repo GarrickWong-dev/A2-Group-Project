@@ -1,8 +1,8 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
-import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 public class Actions {
     private final Logger logger = LogManager.getLogger();
@@ -20,8 +20,8 @@ public class Actions {
     }
 
     public void turnLeft(JSONObject decision){
-     //   Direction heading = directions[(directionIndex() - 1 + directions.length) % directions.length];
-     //   logger.info("heading: " + heading );
+        logger.info("heading: " + getLeft());
+        logger.info("Facing: " + drone.getFacing());
         decision.put("action", "heading");
         decision.put("parameters", new JSONObject().put("direction", getLeft()));
         cm.updateCoords(decision);
@@ -29,7 +29,6 @@ public class Actions {
     }
 
     public void turnRight(JSONObject decision){
-   //     Direction heading = directions[(directionIndex() + 1) % directions.length];
         decision.put("action", "heading");
         decision.put("parameters", new JSONObject().put("direction", getRight()));
         cm.updateCoords(decision);
@@ -41,16 +40,13 @@ public class Actions {
         cm.updateCoords(decision);
     }
 
-    public String getRight()
-    {
-        return  converter.toString(directions[(directionIndex() + 1) % directions.length]);
+    public String getRight(){
+        return converter.toString(directions[(directionIndex() + 1) % directions.length]);
     }
 
-    public String getLeft()
-    {
-        return  converter.toString(directions[(directionIndex() - 1 + directions.length) % directions.length]);
+    public String getLeft(){
+        return converter.toString(directions[(directionIndex() - 1 + directions.length) % directions.length]);
     }
-
 
     private int directionIndex(){
         for(int i = 0; i < directions.length; i++){

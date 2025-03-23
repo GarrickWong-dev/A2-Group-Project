@@ -6,21 +6,22 @@ import org.json.JSONObject;
 
 public class Spiral implements Search {
     private final Logger logger = LogManager.getLogger();
-    private final Actions actions;
+    private final Actions actions = Actions.getInstance();
     private int spiralStep = 0; // Initial movement length
     private int movesInCurrentStep = 0;
     private int turnsInCurrentLayer = 0;
     private boolean scanFlag = true;
     private boolean turnState = true;
+    private IslandDimensions islandDimensions;
     private static Spiral instance;
 
-    private Spiral(Actions actions){
-        this.actions = actions;
+    private Spiral(IslandDimensions islandDimensions){
+        this.islandDimensions = islandDimensions;
     }
 
-    public static Spiral getInstance(Actions actions){
+    public static Spiral getInstance(IslandDimensions islandDimensions){
         if (instance == null) {
-            instance = new Spiral(actions);
+            instance = new Spiral(islandDimensions);
         }
         return instance;
     }
@@ -28,6 +29,12 @@ public class Spiral implements Search {
     @Override
     public JSONObject search(){
         JSONObject decision = new JSONObject();
+        Drone drone = Drone.getInstance();
+        if(drone.getCoordinates() == islandDimensions.getFirstTurning() || drone.getCoordinates() == islandDimensions.getLastTurning()){
+            decision.put("action", "stop");
+            return decision;
+        }
+
         // Always scan between actions
         if (scanFlag) {
             decision.put("action", "scan");

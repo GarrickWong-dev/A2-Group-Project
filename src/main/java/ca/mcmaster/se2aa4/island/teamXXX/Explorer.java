@@ -1,11 +1,13 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
 import java.io.StringReader;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+
 import eu.ace_design.island.bot.IExplorerRaid;
 
 public class Explorer implements IExplorerRaid {
@@ -27,6 +29,8 @@ public class Explorer implements IExplorerRaid {
     private boolean islandDimensionsInitialized = false;
     private boolean islandMeasured = false;
 
+    private Integer state = 0;
+
     private Integer batteryLevel;
     private CreekContainer creekContainer = new CreekContainer();
     private EmergencySiteContainer siteContainer = new EmergencySiteContainer();
@@ -42,7 +46,9 @@ public class Explorer implements IExplorerRaid {
         batteryLevel = info.getInt("budget");
         logger.info("Battery level is {}", batteryLevel);
         //pass the Actions instance to FindIsland.
-        drone = Drone.getInstance(dts.fromString(currentHeading));
+        drone = Drone.getInstance();
+        drone.setFacing(dts.fromString(currentHeading));
+
         findIsland = FindIsland.getInstance(currentHeading, actions);
         dimensionsSetUp = new DimensionsSetUp(currentHeading, actions);
         islandDimensions = new IslandDimensions(currentHeading,dimensionsSetUp.getEchoHeading(), actions, drone);
@@ -51,71 +57,78 @@ public class Explorer implements IExplorerRaid {
     @Override
     public String takeDecision() {
         JSONObject decision = new JSONObject();
-        Coordinates coords = drone.getCoordinates();
-        logger.info(batteryLevel);
+        //Coordinates coords = drone.getCoordinates();
+        logger.info("battery level: " + batteryLevel);
         if(batteryLevel < BATTERY_LIMIT){
             decision.put("action", "stop");
             return decision.toString();
         }
 
-        if (!islandFind) 
-        {
-            decision = findIsland.search();
-            if (findIsland.processDone()) {
-                islandFind = true;
-                logger.info("Search process complete. Island found.");
-            }
-        }
-        if (!islandDimensionSetup && islandFind)
-        {
-             if (!islandDimensionSetupIntialized) 
-             {
-                dimensionsSetUp = new DimensionsSetUp(findIsland.getCurrentHeading(), actions);
-                islandDimensionSetupIntialized = true;
-            }
-            
-            decision = dimensionsSetUp.setupDimensions();
+        logger.info("Facing Before: " + drone.getFacing());
 
-            if (dimensionsSetUp.processDone())
-            {
-                islandDimensionSetup = true;
-            }
-        }
-        //getting dimensions
-        if(!islandMeasured && islandDimensionSetup)
-        {
-            
-             if(islandDimensionsInitialized == false)
-             {
+        switch(state){
+            case 0: 
+                decision = findIsland.search();
+                if (findIsland.processDone()){
+                    state++;
+                    logger.info("Island Found");
+                } else {
+                    break;
+                }
+
+            case 1:
+                if (!islandDimensionSetupIntialized) {
+                    dimensionsSetUp = new DimensionsSetUp(findIsland.getCurrentHeading(), actions);
+                    islandDimensionSetupIntialized = true;
+                }
                 
-                logger.info("current heading " + dimensionsSetUp.getCurrentHeading());
-                logger.info("echo direction " + dimensionsSetUp.getEchoHeading());
-                islandDimensions = new IslandDimensions(dimensionsSetUp.getCurrentHeading(),dimensionsSetUp.getEchoHeading(), actions, drone);
-                islandDimensionsInitialized = true;
-             }
+                decision = dimensionsSetUp.setupDimensions();
+                if (dimensionsSetUp.processDone()) {
+                    state++;
+                    logger.info("Something");    
+                } else {
+                    break;
+                }
 
-            decision = islandDimensions.measurer();
-
-            if (islandDimensions.processDone())
-            {
-                islandMeasured = true;
-            }
-         }
-         if (islandMeasured)
-         {
-            logger.info("First turning coordinates " + islandDimensions.getFirstTurning().getX() + ", " + islandDimensions.getFirstTurning().getY());
-            logger.info("End turning coordinates " + islandDimensions.getLastTurning().getX() + ", " + islandDimensions.getLastTurning().getY());
-            logger.info(islandDimensions.getMidCoordinates().getX() + ", " + islandDimensions.getMidCoordinates().getY());
-            //move to location 
-            decision.put("action", "stop");
-         }
-
-        // Use the Move class to decide the next action
-        // Move moveController = new Move(actions);
-        // JSONObject decision = moveController.move(target);
-        // return decision.toString();
-        Spiral sl = Spiral.getInstance(this.actions);
+            case 2:
+                if(islandDimensionsInitialized == false){    
+                    logger.info("current heading " + dimensionsSetUp.getCurrentHeading());
+                    logger.info("echo direction " + dimensionsSetUp.getEchoHeading());
+                    islandDimensions = new IslandDimensions(dimensionsSetUp.getCurrentHeading(),dimensionsSetUp.getEchoHeading(), actions, drone);
+                    islandDimensionsInitialized = true;
+                }
     
+                decision = islandDimensions.measurer();
+                if (islandDimensions.processDone()){
+                    state++;
+                    logger.info("Dimensions Found");
+                } else {
+                    break;
+                }
+
+            case 3:
+                //move to location 
+                Move moveController = Move.getInstance();
+                decision = moveController.move(islandDimensions.getMidCoordinates());
+                if(moveController.isCompleted()){
+                    state++;
+                    logger.info("Moved to Location");
+                } else {
+                    break;
+                }
+
+            case 4:
+                Spiral sl = Spiral.getInstance(islandDimensions);
+                decision = sl.search();
+                break;
+
+            default:
+                decision.put("action", "stop");
+                break;
+        }
+
+        logger.info("State: " + state);
+        logger.info("Facing After: " + drone.getFacing());
         return decision.toString();
     }
 
@@ -147,7 +160,9 @@ public class Explorer implements IExplorerRaid {
 
     @Override
     public String deliverFinalReport() {
-        logger.info(closestCreek());
+        logger.info("Creek Container is empty: " + creekContainer.isEmpty());
+        logger.info("Emergency Site Container is empty: " + siteContainer.isEmpty());
+        logger.info("Clostest Creek: " + closestCreek());
         return "no creek found";
     }
     private String closestCreek(){

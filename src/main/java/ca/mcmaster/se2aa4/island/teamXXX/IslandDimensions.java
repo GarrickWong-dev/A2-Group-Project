@@ -14,7 +14,6 @@ public class IslandDimensions {
     private final Drone drone;
     private TurnContainer turnContainer = new TurnContainer();
 
-
     private int measuredWidth = 0;
     private int measuredLength = 0;
     private int forwardCount = 0;
@@ -187,8 +186,8 @@ public class IslandDimensions {
 
     public Coordinates getMidCoordinates()
     {
-        int xCoord = (turnContainer.getFirstTurning().getX() + turnContainer.getLastTurning().getX()) / 2;
-        int yCoord = (turnContainer.getFirstTurning().getY() + turnContainer.getLastTurning().getY()) / 2;
-        return  new Coordinates(xCoord, yCoord);
+        int xCoord = (turnContainer.getFirstTurning().getX() + turnContainer.getLastTurning().getX() + 1) / 2;
+        int yCoord = (turnContainer.getFirstTurning().getY() + turnContainer.getLastTurning().getY() + 1) / 2;
+        return new Coordinates(xCoord, yCoord);
     }
 }

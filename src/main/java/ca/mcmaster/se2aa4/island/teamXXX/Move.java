@@ -1,28 +1,30 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 public class Move {
     // Indicates if we have already performed the turning for the y phase.
-    private boolean hasTurned = false;
-    private final Actions actions;
-    private final Drone drone;
+    private static Move instance;
+    private boolean hasTurned = false, completed = false;
+    private final Actions actions = Actions.getInstance();
+    private final Drone drone = Drone.getInstance();
+    private final Logger logger = LogManager.getLogger();
 
-    public Move(Actions actions) {
-        this.actions = actions;
-        this.drone = Drone.getInstance();
+    private Move() {
+    }
+
+    public static Move getInstance(){
+        if (instance == null) {
+            instance = new Move();
+        }
+        return instance;
     }
 
     public JSONObject move(Coordinates target) {
         JSONObject decision = new JSONObject();
         Coordinates current = drone.getCoordinates();
-
-        // If already at the target, stop and reset state.
-        if (current.equals(target)) {
-            decision.put("action", "stop");
-            hasTurned = false;
-            return decision;
-        }
 
         int dx = target.getX() - current.getX();
         int dy = target.getY() - current.getY();
@@ -42,12 +44,18 @@ public class Move {
         // Phase 2: Once near the target x, turn (diagonally) to face the target y.
         else {
             if (!hasTurned) {
+                logger.info("TURNED");
                 turnToDirection(decision, targetYDir);
                 hasTurned = true;
             } else {
                 // Phase 3: Move forward in y direction until reaching the target.
                 actions.moveForward(decision);
             }
+        }
+
+        // If already at the target, stop and reset state.
+        if (current.equals(target)) {
+            completed = true;
         }
 
         return decision;
@@ -65,6 +73,9 @@ public class Move {
         } else {
             actions.turnLeft(decision);
         }
-        // Removed the extra moveForward to avoid applying a double move.
+    }
+
+    public boolean isCompleted(){
+        return completed;
     }
 }
