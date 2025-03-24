@@ -8,7 +8,6 @@ public class FindIsland implements Search
     private String currentHeading;
     private int scanStep = 0;
     private boolean waitingForFly = false;
-    private boolean waitingForStop = false;
     private boolean firstCycle = true;
     private boolean process = false;
 
@@ -19,7 +18,6 @@ public class FindIsland implements Search
 
     private final Actions actions;
     private static FindIsland instance;
-
     private final EchoProcessor echoProcessor = new EchoProcessor();
 
     private FindIsland(String initHeading, Actions actions) {
@@ -27,7 +25,7 @@ public class FindIsland implements Search
         this.actions = actions;
     }
 
-     public static FindIsland getInstance(String initHeading, Actions actions){
+    public static FindIsland getInstance(String initHeading, Actions actions){
         if (instance == null) {
             instance = new FindIsland(initHeading, actions);
         }
@@ -38,16 +36,16 @@ public class FindIsland implements Search
     public JSONObject search() {
         JSONObject decision = new JSONObject();
         
+        //extra scan step to make sure ground is infront
+        if (scanStep == 4) 
+        {
+            return DecisionBuilder.createEchoDecision(currentHeading);
+        }
+        
         if (waitingForFly) 
         {
             actions.moveForward(decision);
             waitingForFly = false;
-            return decision;
-        }
-        if (waitingForStop) 
-        {
-            waitingForStop = false;
-            process = true;
             return decision;
         }
         
@@ -69,16 +67,18 @@ public class FindIsland implements Search
             leftDir = actions.getLeft();
             return DecisionBuilder.createEchoDecision(leftDir);
         } 
-        //processing echo responses
+        //processing echo response
         else if (scanStep == 3) 
         {
             if (echoProcessor.hasGroundDetected()) 
             {
                 String chosenDir = echoProcessor.chooseBestDirection();
-                //if lowest ground range is ahead
+                //if the lowest ground range is ahead
                 if (currentHeading.equals(chosenDir)) 
                 {
                     process = true;
+                    resetScanState();
+                    return decision;
                 } 
                 else 
                 {
@@ -92,12 +92,11 @@ public class FindIsland implements Search
                         actions.turnLeft(decision);
                     }
                     currentHeading = chosenDir;
-                    waitingForStop = true;
+                    scanStep = 4;
+                    return decision;
                 }
-                resetScanState();
-                return decision;
             } 
-            //no gorund detected
+            //no ground detected
             else 
             {
                 //turn towards direction that has greatest range
@@ -118,7 +117,7 @@ public class FindIsland implements Search
                         waitingForFly = true;
                     }
                 } 
-                else 
+                else
                 {
                     String newHeading = actions.getLeft();
                     if (currentHeading.equals(newHeading)) 
@@ -131,7 +130,7 @@ public class FindIsland implements Search
                         currentHeading = newHeading;
                         waitingForFly = true;
                     }
-                }
+                }  
                 resetScanState();
                 return decision;
             }
@@ -143,6 +142,24 @@ public class FindIsland implements Search
     public void updateState(JSONObject response) 
     {
         JSONObject extras = response.getJSONObject("extras");
+        //chekcing if gorund is infront
+        if (scanStep == 4) {
+            if (extras.has("found") && extras.has("range")) {
+                String found = extras.getString("found");
+                // If ground is front finish
+                if ("ground".equals(found)) {
+                    process = true;
+                } 
+                //no ground restart the search process.
+                else 
+                {
+                    resetScanState();
+                }
+            }
+            scanStep = 0;
+            return;
+        }
+        
         if (!extras.has("found") || !extras.has("range")) 
         {
             return;
