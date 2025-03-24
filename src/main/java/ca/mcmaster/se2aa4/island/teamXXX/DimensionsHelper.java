@@ -3,14 +3,15 @@ package ca.mcmaster.se2aa4.island.teamXXX;
 import org.json.JSONObject;
 
 public class DimensionsHelper {
-    private Actions actions;
+    private Actions actions; // Actions instance for performing movements and decisions
 
+    // Constructor to initialize with an Actions object
     public DimensionsHelper(Actions actions) {
         this.actions = actions;
     }
 
-    public JSONObject buildEcho(String direction) 
-    {
+    // Builds an "echo" decision with a given direction
+    public JSONObject buildEcho(String direction) {
         JSONObject decision = new JSONObject();
         JSONObject parameters = new JSONObject();
         parameters.put("direction", direction);
@@ -19,35 +20,30 @@ public class DimensionsHelper {
         return decision;
     }
 
-
-    public JSONObject buildTurn(String currentHeading, String side) 
-    {
+    // Builds a "turn" decision based on current heading and side (right or left)
+    public JSONObject buildTurn(String currentHeading, String side) {
         JSONObject decision = new JSONObject();
-        if ("right".equals(side)) 
-        {
+        // Turn right or left based on the side parameter
+        if ("right".equals(side)) {
             actions.turnRight(decision);
-        } 
-        else 
-        {
+        } else {
             actions.turnLeft(decision);
         }
         return decision;
     }
-    
-    public String computeTurnHeading(String currentHeading, String side) 
-    {
-        if ("right".equals(side)) 
-        {
+
+    // Computes the new heading (direction) after turning right or left
+    public String computeTurnHeading(String currentHeading, String side) {
+        // Return the new heading after a right or left turn
+        if ("right".equals(side)) {
             return actions.getRight();
-        } 
-        else 
-        {
+        } else {
             return actions.getLeft();
         }
     }
-    
-    public JSONObject buildSideEcho(String currentHeading, String side) 
-    {
+
+    // Builds a "side echo" by determining the new heading and calling buildEcho
+    public JSONObject buildSideEcho(String currentHeading, String side) {
         return buildEcho(computeTurnHeading(currentHeading, side));
     }
 }
