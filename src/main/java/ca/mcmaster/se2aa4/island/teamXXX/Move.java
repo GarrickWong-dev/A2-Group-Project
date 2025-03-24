@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
-public class Move {
+public class Move implements Movement{
     // Indicates if we have already performed the turning for the y phase.
     private static Move instance;
     private boolean hasTurned = false, completed = false;
@@ -22,6 +22,7 @@ public class Move {
         return instance;
     }
 
+    @Override
     public JSONObject move(Coordinates target) {
         JSONObject decision = new JSONObject();
         Coordinates current = drone.getCoordinates();
