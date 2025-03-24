@@ -2,7 +2,7 @@ package ca.mcmaster.se2aa4.island.teamXXX;
 
 import org.json.JSONObject;
 
-public class IslandDimensions {
+public class IslandDimensions implements Search{
 
     private int state = 0;
     private String currentHeading;
@@ -29,7 +29,8 @@ public class IslandDimensions {
         this.drone = drone;
     }
 
-    public JSONObject measurer() 
+    @Override
+    public JSONObject search() 
     {
         JSONObject decision = new JSONObject();
         while (true) 

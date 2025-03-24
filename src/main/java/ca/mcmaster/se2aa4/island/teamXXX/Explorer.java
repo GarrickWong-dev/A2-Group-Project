@@ -77,7 +77,7 @@ public class Explorer implements IExplorerRaid {
                     islandDimensionSetupIntialized = true;
                 }
                 
-                decision = dimensionsSetUp.setupDimensions();
+                decision = dimensionsSetUp.search();
                 if (dimensionsSetUp.processDone()) {
                     state++;
                 } else {
@@ -90,7 +90,7 @@ public class Explorer implements IExplorerRaid {
                     islandDimensionsInitialized = true;
                 }
     
-                decision = islandDimensions.measurer();
+                decision = islandDimensions.search();
                 if (islandDimensions.processDone()){
                     state++;
                 } else {

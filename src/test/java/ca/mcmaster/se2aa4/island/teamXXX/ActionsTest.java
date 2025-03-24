@@ -24,7 +24,7 @@ public class ActionsTest {
         dts = dts.getInstance();
         cm = cm.getInstance();
         decision = new JSONObject();
-        actions = actions.getInstance(cm,drone,dts);
+        actions = actions.getInstance();
     }
 
     @Test

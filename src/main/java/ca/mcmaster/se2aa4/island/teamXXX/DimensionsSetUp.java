@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
-public class DimensionsSetUp {
+public class DimensionsSetUp implements Search{
     private int state = 0;
     private final Logger logger = LogManager.getLogger();
     
@@ -32,7 +32,7 @@ public class DimensionsSetUp {
         this.helper = new DimensionsHelper(actions);
     }
     
-    public JSONObject setupDimensions() {
+    public JSONObject search() {
         JSONObject decision = new JSONObject();
         switch(state) 
         {
@@ -53,7 +53,7 @@ public class DimensionsSetUp {
                     rightEdgeStatus = null;
                     leftEdgeStatus = null;
                     state = 2;
-                    return setupDimensions();
+                    return search();
                 }
                 break;
             case 2:
@@ -76,7 +76,7 @@ public class DimensionsSetUp {
                 {
                     chosenSide = (rightEdgeRange < leftEdgeRange) ? "right" : "left";
                     state = 5;
-                    return setupDimensions();
+                    return search();
                 } 
                 else 
                 {
@@ -113,7 +113,7 @@ public class DimensionsSetUp {
                     {
                         
                         state = 8;
-                        return setupDimensions();
+                        return search();
 
                     } 
                     else 
