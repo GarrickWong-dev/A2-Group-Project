@@ -1,6 +1,6 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
-public class TurnContainer extends Container<Coordinates> {
+public class TurnContainer extends ListContainer<Coordinates> {
 
     private Coordinates firstTurning = null;
     private Coordinates lastTurning = null;
@@ -12,7 +12,7 @@ public class TurnContainer extends Container<Coordinates> {
             firstTurning = coordinate;
         }
         lastTurning = coordinate;
-        container.add(coordinate);
+        elements.add(coordinate);
     }
 
     public Coordinates getFirstTurning() {

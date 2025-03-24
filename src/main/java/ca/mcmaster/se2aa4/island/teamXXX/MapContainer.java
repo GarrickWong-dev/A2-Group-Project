@@ -19,6 +19,10 @@ public abstract class MapContainer<K, V> implements Iterable<K> {
         return map.get(key);
     }
 
+    public K getFirtKey(){
+        return map.keySet().stream().findFirst().get();
+    }
+
     @Override
     public Iterator<K> iterator() {
         return map.keySet().iterator(); // Iterate over keys

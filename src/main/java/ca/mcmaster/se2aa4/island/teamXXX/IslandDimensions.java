@@ -1,16 +1,13 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 public class IslandDimensions {
-    private final Logger logger = LogManager.getLogger();
 
     private int state = 0;
     private String currentHeading;
     private final Actions actions;
-    private final String echoHeading;  
+    private String echoHeading;  
     private final Drone drone;
     private TurnContainer turnContainer = new TurnContainer();
 
@@ -39,15 +36,27 @@ public class IslandDimensions {
         {
             switch (state) 
             {
-                case 0:
+                 //turn towards width
+                 case 0:
+                    turnContainer.add(new Coordinates(drone.getCoordinates().getX(), drone.getCoordinates().getY()));
+                    if (actions.getRight().equals(echoHeading)) 
+                    {
+                        actions.turnRight(decision);
+                        currentHeading = echoHeading;
+                        echoHeading = actions.getRight();
+                    } 
+                    else
+                    {
+                        actions.turnLeft(decision);
+                        currentHeading = echoHeading;
+                        echoHeading = actions.getLeft();
+                    } 
+                    state = 1;
+                    return decision;
+                case 1:
                     //move forward twice before measuring width
                     if (forwardCount < 2) 
                     {
-                        if (forwardCount == 0)
-                        {
-                            turnContainer.add(new Coordinates(drone.getCoordinates().getX(), drone.getCoordinates().getY()));
-                            //store first set of coords here
-                        }
                         actions.moveForward(decision);
                         forwardCount++;
                         return decision;
@@ -55,10 +64,10 @@ public class IslandDimensions {
                     else 
                     {
                         forwardCount = 0;
-                        state = 1; 
+                        state = 2; 
                         break;
                     }
-                case 1:
+                case 2:
                     //measre width
                     if (waitingForWidthEcho) 
                     {
@@ -74,7 +83,7 @@ public class IslandDimensions {
                         return decision;
                     }
 
-                case 2:
+                case 3:
                     if (actions.getRight().equals(echoHeading)) 
                     {
                         actions.turnRight(decision);
@@ -94,9 +103,9 @@ public class IslandDimensions {
                         currentHeading = echoHeading;
                         lengthEchoDirection = actions.getLeft();
                     }
-                    state = 3;
+                    state = 4;
                     return decision;
-                case 3:
+                case 4:
                     //move forward twice before measuring length
                     if (forwardCount < 2) 
                     {
@@ -107,10 +116,10 @@ public class IslandDimensions {
                     else 
                     {
                         forwardCount = 0;
-                        state = 4; 
+                        state = 5; 
                         break; 
                     }
-                case 4:
+                case 5:
                     //measure length
                     if (waitingForLengthEcho) 
                     {
@@ -125,7 +134,7 @@ public class IslandDimensions {
                         waitingForLengthEcho = true;
                         return decision;
                     }
-                case 5:
+                case 6:
                     //end coords here
                     turnContainer.add(new Coordinates(drone.getCoordinates().getX(), drone.getCoordinates().getY()));
                     process = true;
@@ -147,19 +156,19 @@ public class IslandDimensions {
         }
         String found = extras.getString("found");
         //for width measurement phase
-        if (state == 1 && !waitingForWidthEcho) 
+        if (state == 2 && !waitingForWidthEcho) 
         {
             if ("OUT_OF_RANGE".equals(found)) 
             {
-                state = 2; 
+                state = 3; 
             }
         }
         //for length measurement phase
-        else if (state == 4 && !waitingForLengthEcho) 
+        else if (state == 5 && !waitingForLengthEcho) 
         {
             if ("OUT_OF_RANGE".equals(found)) 
             {
-                state = 5; 
+                state = 6; 
             }
         }
     }

@@ -1,9 +1,12 @@
 package ca.mcmaster.se2aa4.island.teamXXX;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 public class DimensionsSetUp {
     private int state = 0;
+    private final Logger logger = LogManager.getLogger();
     
     private String currentHeading;
     private int targetForwardSteps = 0;
@@ -85,6 +88,7 @@ public class DimensionsSetUp {
                 //turn to chosen side
                 decision = helper.buildTurn(currentHeading, chosenSide);
                 currentHeading = helper.computeTurnHeading(currentHeading, chosenSide);
+                logger.info("current Heading " + currentHeading);
                 state = 6;
                 break;
             case 6:
@@ -107,8 +111,10 @@ public class DimensionsSetUp {
                 {
                     if (sideEchoStatus != null && "OUT_OF_RANGE".equals(sideEchoStatus)) 
                     {
+                        
                         state = 8;
                         return setupDimensions();
+
                     } 
                     else 
                     {
@@ -118,14 +124,8 @@ public class DimensionsSetUp {
                 }
                 break;
             case 8:
-                //turn final time in chosen direction
-                decision = helper.buildTurn(currentHeading, chosenSide);
-                currentHeading = helper.computeTurnHeading(currentHeading, chosenSide);
-                lastEchoDirection = helper.computeTurnHeading(currentHeading, chosenSide);
-                state = 9;
-                break;
-            case 9:
                 // Stop command.
+                lastEchoDirection = helper.computeTurnHeading(currentHeading, chosenSide);
                 decision = new JSONObject();
                 process = true;
                 break;
